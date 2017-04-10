@@ -1,0 +1,2 @@
+#
+<sip:202:222@172.22.99.150>;transport=ws,udp;medianat=ice;mediaenc=dtls_srtp;answermode=auto;regint=0
