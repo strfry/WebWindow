@@ -116,7 +116,7 @@ function handleAnswer(msg) {
 
 var ws_url = "ws://" + location.hostname + ":8888";
 console.log("WebSocket URL: ", ws_url)
-var ws = WebSocket(ws_url, 'sip')
+var ws = new WebSocket(ws_url, "sip")
 ws.onopen = createOffer
 ws.onmessage = handleAnswer;
 
