@@ -41,7 +41,7 @@ function handleMediaStream(event) {
 function requestUserMedia() {
 	navigator.mediaDevices.getUserMedia({
 		audio: true,
-		video: true
+		video: false
   })
   .then((stream) => {pc.addStream(stream); createOffer() })
   .catch(function(e) {
@@ -90,7 +90,9 @@ function handleAnswer(msg) {
 	var reader = new FileReader();
 	reader.onload = function() {		
 		var sip = reader.result
-		if (sip.indexOf("SIP/2.0 200 Answering") != -1) {
+		if (sip.indexOf("SIP/2.0 200 Answering") != -1 ||
+			sip.indexOf("SIP/2.0 183 Session Progress") != -1
+			) {
 			if (first_answer) {
 				first_answer = false;
 				console.log("got first msg", sip)
@@ -115,42 +117,41 @@ function handleAnswer(msg) {
 }
 
 var ws_url = "ws://" + location.hostname + ":8888";
+var ws_url = "wss://" + location.hostname + "/baresip";
 console.log("WebSocket URL: ", ws_url)
 var ws = new WebSocket(ws_url, "sip")
-ws.onopen = createOffer
+//ws.onopen = createOffer
 ws.onmessage = handleAnswer;
 
-//ws.onopen = requestUserMedia
-requestUserMedia()
+ws.onopen = requestUserMedia
+//requestUserMedia()
 
 /** SIP Fake Header Functions */
 
 function send_ack() {
 	var ack =
-	"ACK sip:202@172.22.99.150 SIP/2.0\r\n\
-	Via: SIP/2.0/UDP 172.22.99.150:5060;branch=z9hG4bK0223ae47334d14ca;rport\r\n\
-	Max-Forwards: 70\r\n\
-	To: <sip:0i@172.22.99.150>;tag=0bc3aa7597a06724\r\n\
-	From: <sip:202@172.22.99.150>;tag=6173b9c87aa7a537\r\n\
-	Call-ID: 3dd3260dbcb46751\r\n\
-	CSeq: 30695 ACK\r\n\
-	User-Agent: baresip v0.5.1 (x86_64/linux)\r\n\
-	Content-Length: 0\r\n\
-	"
+"ACK sip:username@exit.ewindow.org SIP/2.0\r\n\
+Max-Forwards: 70\r\n\
+To: <sip:username@exit.ewindow.org>;tag=0bc3aa7597a06724\r\n\
+From: <sip:web@exit.ewindow.org>;tag=6173b9c87aa7a537\r\n\
+Call-ID: 3dd3260dbcb46751\r\n\
+CSeq: 30695 ACK\r\n\
+User-Agent: baresip v0.5.1 (x86_64/linux)\r\n\
+Content-Length: 0\r\n\
+\r\n"
 	
 	ws.send(ack)
 }
 
 function send_offer(sdp) {
-	var invite = "INVITE sip:202@172.22.99.150:1337 SIP/2.0\r\n\
-Via: SIP/2.0/UDP 172.22.99.150:5060;branch=z9hG4bK27d89da3ed1dc14f;rport\r\n\
+	var invite = "INVITE sip:username@exit.ewindow.org SIP/2.0\r\n\
 Contact: <sip:202-0x13c86c0@172.22.99.150:5060>\r\n\
 Max-Forwards: 70\r\n\
-To: <sip:202@172.22.99.150>\r\n\
-From: <sip:202@localhost>;tag=9fb5a59fe99931de\r\n\
+To: <sip:username@exit.ewindow.org>\r\n\
+From: <sip:username@localhost>;tag=9fb5a59fe99931de\r\n\
 Call-ID: db5f1796abd4e582\r\n\
 CSeq: 30695 INVITE\r\n\
-User-Agent: baresip v0.5.1 (x86_64/linux)\r\n\
+User-Agent: Web2CTunnel \r\n\
 Allow: INVITE,ACK,BYE,CANCEL,OPTIONS,REFER,NOTIFY,SUBSCRIBE,INFO,MESSAGE\r\n\
 Supported: gruu\r\n\
 Content-Type: application/sdp\r\n\
