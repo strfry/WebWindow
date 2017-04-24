@@ -13,19 +13,12 @@ var restartInput = document.querySelector('input#restart');
 var vadInput = document.querySelector('input#vad');
 var videoInput = document.querySelector('input#video');
 
-var numAudioTracksInput = document.querySelector('div#numAudioTracks input');
-var numAudioTracksDisplay =
-    document.querySelector('span#numAudioTracksDisplay');
 var outputTextarea = document.querySelector('textarea#output');
 var createOfferButton = document.querySelector('button#createOffer');
 
 createOfferButton.onclick = createOffer;
 
 var first_answer = true;
-
-numAudioTracksInput.onchange = function() {
-  numAudioTracksDisplay.textContent = this.value;
-};
 
 var pc = new RTCPeerConnection(null);
 var acx = new AudioContext();
@@ -40,14 +33,10 @@ function handleIceCandidate(event) {
 }
 
 function handleMediaStream(event) {
-	//document.getElementById("audioElement").srcObject = event.stream;
+	console.log("handleMediaStream", event)
 	document.getElementById("videoWindow").srcObject = event.stream;
-	//console.log(event)
 }
 
-function gotStream(stream) {
-	document.getElementById("videoWindow").srcObject = stream;
-}
 
 function requestUserMedia() {
 	navigator.mediaDevices.getUserMedia({
@@ -64,24 +53,6 @@ function requestUserMedia() {
 pc = new RTCPeerConnection(null);
 
 function createOffer() {
-  if (pc) {
-//    pc.close();
-//    pc = null;
-//    pc = new RTCPeerConnection(null);
-  }
-    
-  var numRequestedAudioTracks = numAudioTracksInput.value;
-  while (numRequestedAudioTracks < pc.getLocalStreams().length) {
-    pc.removeStream(pc.getLocalStreams()[pc.getLocalStreams().length - 1]);
-  }
-  while (numRequestedAudioTracks > pc.getLocalStreams().length) {
-    // Create some dummy audio streams using Web Audio.
-    // Note that this fails if you try to do more than one track in Chrome
-    // right now.
-    var dst = acx.createMediaStreamDestination();
-    //pc.addStream(dst.stream);
-  }
-
   var offerOptions = {
     // New spec states offerToReceiveAudio/Video are of type long (due to
     // having to tell how many "m" lines to generate).
@@ -99,7 +70,6 @@ function createOffer() {
   .then(function(desc) {
     pc.setLocalDescription(desc);
     outputTextarea.value = desc.sdp;
-    //send_offer(desc.sdp)
   })
   .catch(function(error) {
     outputTextarea.value = 'Failed to createOffer: ' + error;
@@ -117,7 +87,6 @@ function strip_sip(answer) {
 }
 
 function handleAnswer(msg) {	
-	//console.log("handleAnswer;", String(msg.data))
 	var reader = new FileReader();
 	reader.onload = function() {		
 		var sip = reader.result
@@ -138,23 +107,23 @@ function handleAnswer(msg) {
 				
 			send_ack();
 			pc.setRemoteDescription(new RTCSessionDescription(desc))
-//			var remote_pc = new RTCPeerConnection(configuration)
-//remote_pc.setRemoteDescription(new RTCSessionDescription(offer), ...) {
-//  remote_pc.createAnswer()
-//}
 		} else {
-			console.log("other sip event")
-			//console.log(sip)
+			console.log("other sip event", sip)
 		}
 	}
 	reader.readAsText(msg.data);
 }
 
-var ws = new WebSocket('ws://172.22.99.150:8888', 'sip')
-//var ws = new WebSocket('ws://192.168.254.184:8888', 'sip')
-//ws.onopen = createOffer
-ws.onopen = requestUserMedia
+var ws_url = "ws://" + location.hostname + ":8888";
+console.log("WebSocket URL: ", ws_url)
+var ws = WebSocket(ws_url, 'sip')
+ws.onopen = createOffer
 ws.onmessage = handleAnswer;
+
+//ws.onopen = requestUserMedia
+requestUserMedia()
+
+/** SIP Fake Header Functions */
 
 function send_ack() {
 	var ack =
@@ -171,21 +140,6 @@ function send_ack() {
 	
 	ws.send(ack)
 }
-
-var invite = "SIP/2.0 2INVITE sip:202@172.22.99.150:1337 SIP/2.0\r\n\
-Via: SIP/2.0/UDP 172.22.99.150:5060;branch=z9hG4bK27d89da3ed1dc14f;rport\r\n\
-Contact: <sip:202-0x13c86c0@172.22.99.150:5060>\r\n\
-Max-Forwards: 70\r\n\
-To: <sip:202@172.22.99.150>\r\n\
-From: <sip:202@localhost>;tag=9fb5a59fe99931de\r\n\
-Call-ID: db5f1796abd4e582\r\n\
-CSeq: 30695 INVITE\r\n\
-User-Agent: baresip v0.5.1 (x86_64/linux)\r\n\
-Allow: INVITE,ACK,BYE,CANCEL,OPTIONS,REFER,NOTIFY,SUBSCRIBE,INFO,MESSAGE\r\n\
-Supported: gruu\r\n\
-Content-Type: application/sdp\r\n\
-Content-Length: "
-
 
 function send_offer(sdp) {
 	var invite = "INVITE sip:202@172.22.99.150:1337 SIP/2.0\r\n\
