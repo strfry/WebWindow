@@ -1,1 +1,1 @@
-<sip:username:password@example.com>;transport=ws;medianat=ice;mediaenc=dtls_srtp;stunserver=stun:localhost
+<sip:username:password@example.com>;regint=0;transport=ws;medianat=ice;mediaenc=dtls_srtp;stunserver=stun:localhost;
