@@ -1,9 +1,9 @@
-curl localhost:4444 > /dev/null
-if [ ! $? ]; then
+curl localhost:4444 2> /dev/null
+if [ $? ]; then
 	echo "Starting up Python WebServer"
 	python -m SimpleHTTPServer 4444 &
+	xdg-open http://localhost:4444/
 fi
 
 echo Connect to http://localhost:4444/
 
-baresip -vvv -f dotbaresip
